@@ -7,7 +7,8 @@ const Message = () => {
         <div className="message">
             <Avatar />
             <div className="message__info">
-                <h4>franco_n
+                <h4>
+                    franco_n
                     <span className='message__timestamp'>this is a timestamp</span>
                 </h4>
                 <p>This is a message</p>
