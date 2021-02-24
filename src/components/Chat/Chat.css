@@ -42,4 +42,15 @@
 
 .chat__messages {
     flex: 1;
+    overflow: scroll;
+}
+
+/* Handle scrollbar for Chrome, Safari and Opera */
+.chat__messages::-webkit-scrollbar {
+    display: none;
+}
+
+.chat__messages {
+    -ms-overflow-style: none; /* Handle scrollbar for IE and Edge */
+    scrollbar-width: none; /* Handle scrollbar for firefox */
 }
