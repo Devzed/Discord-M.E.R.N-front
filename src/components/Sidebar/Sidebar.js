@@ -13,30 +13,42 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import { selectUser } from '../../features/userSlice';
 import { useSelector } from 'react-redux';
 import db, { auth } from '../../firebase';
+import axios from '../../axios';
+import Pusher from 'pusher-js';
+
+const pusher = new Pusher('d683df0dc25286cbaff4', {
+    cluster: 'eu'
+});
 
 const Sidebar = () => {
     const user = useSelector(selectUser);
     const [channels, setChannels] = useState([]);
 
-    const handleAddChannel = () => {
-        const channelName = prompt('Enter a new channel name');
-
-        if (channelName) {
-            // Channel can be created
-            db.collection('channels').add({
-                channelName
-            })
-        }
+    const getChannels = () => {
+        axios.get('/get/channelList').then(res => {
+            setChannels(res.data);
+        })
     }
 
     useEffect(() => {
-        db.collection('channels').onSnapshot(snapshot => {
-            setChannels(snapshot.docs.map(doc => ({
-                id: doc.id,
-                channel: doc.data()
-            })))
-        })
+        getChannels();
+
+        const channel = pusher.subscribe('channels');
+        channel.bind('newChannel', function(data) {
+            getChannels();
+        });
     }, []);
+
+    const handleAddChannel = e => {
+        e.preventDefault();
+        const channelName = prompt('Enter a new channel name');
+
+        if (channelName) {
+            axios.post('/new/channel', {
+                channelName: channelName
+            })
+        }
+    }
 
     return (
         <div className='sidebar'>
@@ -56,11 +68,11 @@ const Sidebar = () => {
 
                 <div className="sidebar__channelsList">
                     {
-                        channels.map(({ id, channel }) => (
+                        channels.map(({ id, channelName }) => (
                             <SidebarChannel 
                                 key={ id } 
                                 id={ id } 
-                                channelName={ channel.channelName }
+                                channelName={ channelName }
                             />
                         ))
                     }

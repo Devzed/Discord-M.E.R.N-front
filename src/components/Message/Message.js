@@ -11,7 +11,7 @@ const Message = ({ timestamp, user, message }) => {
                     { user.displayName }
                     <span className='message__timestamp'>
                         {
-                            new Date(timestamp?.toDate()).toUTCString()
+                            new Date(parseInt(timestamp)).toDateString()
                         }
                     </span>
                 </h4>

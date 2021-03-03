@@ -11,6 +11,12 @@ import { useSelector } from 'react-redux';
 import { selectChannelId, selectChannelName } from '../../features/appSlice';
 import db from '../../firebase';
 import firebase from 'firebase';
+import axios from '../../axios';
+import Pusher from 'pusher-js';
+
+const pusher = new Pusher('d683df0dc25286cbaff4', {
+    cluster: 'eu'
+});
 
 const Chat = () => {
     const user = useSelector(selectUser);
@@ -19,30 +25,32 @@ const Chat = () => {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState([]);
 
-    useEffect(() => {
-        if (channelId) {
-            db
-                .collection('channels')
-                .doc(channelId)
-                .collection('messages')
-                .orderBy('timestamp', 'desc')
-                .onSnapshot(snapshot => (
-                    setMessages(snapshot.docs.map(doc => doc.data()))
-                ))
+    const getConversation = channelID => {
+        if (channelID) {
+            axios.get(`/get/conversation?id=${channelID}`).then(res => {
+                setMessages(res.data[0].conversation);
+            })
         }
+    }
+
+    useEffect(() => {
+        getConversation(channelId);
+
+        var channel = pusher.subscribe('conversation');
+        channel.bind('newMessage', function(data) {
+            getConversation(channelId);
+        });
     }, [channelId])
 
     const sendMessage = e => {
         e.preventDefault();
-        db
-            .collection('channels')
-            .doc(channelId)
-            .collection('messages')
-            .add({
-                message: input,
-                user: user,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            })
+
+        axios.post(`/new/message?id=${ channelId }`, {
+            message: input,
+            timestamp: Date.now(),
+            user: user
+        });
+
         setInput('');
     }
 
@@ -54,6 +62,7 @@ const Chat = () => {
                 {
                     messages.map(message => (
                         <Message 
+                            key={message._id}
                             timestamp={message.timestamp}
                             user={message.user}
                             message={message.message}
